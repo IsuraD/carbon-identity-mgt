@@ -21,11 +21,11 @@ package org.wso2.carbon.identity.handler.event.account.lock.constants;
  */
 public class AccountConstants {
 
-//    public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
-//    public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
+    public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
 //    public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
-//    public static final String FAILED_LOGIN_ATTEMPTS_CLAIM =
-//            "http://wso2.org/claims/identity/failedLoginAttempts";
+    public static final String FAILED_LOGIN_ATTEMPTS_CLAIM =
+            "http://wso2.org/claims/identity/failedLoginAttempts";
 //    public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
 //            "http://wso2.org/claims/identity/failedLoginLockoutCount";
 //

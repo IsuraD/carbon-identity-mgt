@@ -74,19 +74,19 @@ public class JDBCUniqueIdResolver implements UniqueIdResolver {
     public DomainUser getUser(String domainUserId, int domainId) throws UniqueIdResolverException,
             UserNotFoundException {
         try (UnitOfWork unitOfWork = UnitOfWork.beginTransaction(dataSource.getConnection())) {
-            final String selectUniqueUser = "SELECT CONNECTOR_TYPE, CONNECTOR_ID, CONNECTOR_USER_ID FROM " +
-                    "IDM_USER WHERE USER_ID = :" + SQLPlaceholders.USER_ID + "; AND " +
+            final String selectUniqueUser = "SELECT CONNECTOR_TYPE, CONNECTOR_ID, CONNECTOR_USER_ID," +
+                    " STATE FROM IDM_USER WHERE USER_ID = :" + SQLPlaceholders.USER_ID + "; AND " +
                     "DOMAIN_ID = :" + SQLPlaceholders.DOMAIN_ID + "; ";
 
             DomainUser domainUser = new DomainUser();
             List<UserPartition> userPartitions = new ArrayList<>();
+            String state = null;
             NamedPreparedStatement namedPreparedStatement = new NamedPreparedStatement(
                     unitOfWork.getConnection(),
                     selectUniqueUser);
             namedPreparedStatement.setString(SQLPlaceholders.USER_ID, domainUserId);
             namedPreparedStatement.setInt(SQLPlaceholders.DOMAIN_ID, domainId);
             try (ResultSet resultSet = namedPreparedStatement.getPreparedStatement().executeQuery()) {
-
                 while (resultSet.next()) {
                     UserPartition userPartition = new UserPartition();
                     userPartition.setConnectorId(resultSet.getString(ColumnNames.CONNECTOR_ID));
@@ -94,11 +94,13 @@ public class JDBCUniqueIdResolver implements UniqueIdResolver {
                     userPartition.setIdentityStore(UniqueIdResolverConstants.IDENTITY_STORE_CONNECTOR.equals(resultSet
                             .getString(ColumnNames.CONNECTOR_TYPE)));
                     userPartitions.add(userPartition);
+                    state = resultSet.getString(SQLPlaceholders.STATE);
                 }
             }
 
             domainUser.setDomainUserId(domainUserId);
             domainUser.setUserPartitions(userPartitions);
+            domainUser.setState(state);
             return domainUser;
 
         } catch (SQLException e) {
@@ -334,10 +336,11 @@ public class JDBCUniqueIdResolver implements UniqueIdResolver {
 
         try (UnitOfWork unitOfWork = UnitOfWork.beginTransaction(dataSource.getConnection(), false)) {
             final String addUser = "INSERT INTO IDM_USER " +
-                    "(USER_ID, CONNECTOR_USER_ID, CONNECTOR_ID, DOMAIN_ID, CONNECTOR_TYPE) " +
+                    "(USER_ID, CONNECTOR_USER_ID, CONNECTOR_ID, DOMAIN_ID, CONNECTOR_TYPE, STATE) " +
                     "VALUES (:" + SQLPlaceholders.USER_ID + ";, :" + SQLPlaceholders.CONNECTOR_USER_ID + ";, " +
                     ":" + SQLPlaceholders.CONNECTOR_ID + ";, :" + SQLPlaceholders.DOMAIN_ID + ";, " +
-                    ":" + SQLPlaceholders.CONNECTOR_TYPE + ";)";
+                    ":" + SQLPlaceholders.CONNECTOR_TYPE + ";, :" + SQLPlaceholders.STATE + ";)";
+
             NamedPreparedStatement namedPreparedStatement = new NamedPreparedStatement(
                     unitOfWork.getConnection(), addUser);
             for (UserPartition userPartition : domainUser.getUserPartitions()) {
@@ -348,6 +351,7 @@ public class JDBCUniqueIdResolver implements UniqueIdResolver {
                 namedPreparedStatement.setString(SQLPlaceholders.CONNECTOR_TYPE,
                         userPartition.isIdentityStore() ? UniqueIdResolverConstants.IDENTITY_STORE_CONNECTOR :
                                 UniqueIdResolverConstants.CREDENTIAL_STORE_CONNECTOR);
+                namedPreparedStatement.setString(SQLPlaceholders.STATE, domainUser.getState());
                 namedPreparedStatement.getPreparedStatement().addBatch();
             }
 

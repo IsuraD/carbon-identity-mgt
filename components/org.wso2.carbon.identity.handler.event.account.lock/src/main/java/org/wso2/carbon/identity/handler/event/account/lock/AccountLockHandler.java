@@ -28,10 +28,20 @@ package org.wso2.carbon.identity.handler.event.account.lock;
 //import org.wso2.carbon.identity.core.util.IdentityUtil;
 //import org.wso2.carbon.identity.event.IdentityEventConstants;
 
+import org.wso2.carbon.apimgt.lifecycle.manager.core.LifecycleOperationManager;
+import org.wso2.carbon.apimgt.lifecycle.manager.core.exception.LifecycleException;
+import org.wso2.carbon.apimgt.lifecycle.manager.core.impl.LifecycleState;
 import org.wso2.carbon.identity.common.base.message.MessageContext;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.EventMessageContext;
 import org.wso2.carbon.identity.event.model.Event;
+import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
+import org.wso2.carbon.identity.mgt.AuthenticationContext;
+import org.wso2.carbon.identity.mgt.User;
+import org.wso2.carbon.identity.mgt.constant.StoreConstants;
+import org.wso2.carbon.identity.mgt.exception.IdentityStoreException;
+import org.wso2.carbon.identity.mgt.exception.UserNotFoundException;
 
 //import org.wso2.carbon.identity.event.event.Event;
 //import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
@@ -49,7 +59,7 @@ public class AccountLockHandler extends AbstractEventHandler {
 
 //    private static ThreadLocal<String> lockedState = new ThreadLocal<>();
 
-    private enum LockedStates { LOCKED_MODIFIED, UNLOCKED_MODIFIED, LOCKED_UNMODIFIED, UNLOCKED_UNMODIFIED }
+    private enum LockedStates {LOCKED_MODIFIED, UNLOCKED_MODIFIED, LOCKED_UNMODIFIED, UNLOCKED_UNMODIFIED}
 
     public String getName() {
         return "account.lock.handler";
@@ -74,11 +84,62 @@ public class AccountLockHandler extends AbstractEventHandler {
     /**
      * Handle the account lock event
      *
-     * @param event : Event
+     * @param eventMessageContext : messageContext
      * @throws EventException : event exception
      */
     @Override
-    public void handleEvent(Event event) throws EventException {
+    public void handleEvent(EventMessageContext eventMessageContext) throws EventException {
+
+        //TODO values should be populated from config
+        boolean accountLockedEnabled = false;
+//        int accountLockTimeInMinutes = 2;
+        int maximumFailedAttempts = 3;
+//        double unlockTimeRatio = 1;
+        String lifecycleId = null;
+
+        if (!accountLockedEnabled) {
+            return;
+        }
+        LifecycleOperationManager lifecycleOperationManager = new LifecycleOperationManager();
+
+        if (eventMessageContext.getEvent().getEventName().equals(StoreConstants.IdentityStoreInterceptorConstants
+                .POST_AUTHENTICATE)) {
+
+            AuthenticationContext authenticationContext = (AuthenticationContext) eventMessageContext.getEvent()
+                    .getEventProperties().get(StoreConstants.IdentityStoreConstants.AUTHENTICATION_CONTEXT);
+            User user = authenticationContext.getUser();
+
+            //TODO authenticationContext.getUser().getState() and check allows to login or not
+
+            //TODO there should be a way to identity authentication success or not
+
+            //TODO assign lifecycleId from usr object
+            lifecycleId = "adsfsdfdsfdsfdsfdff";
+            boolean authenticationSuccess = false;
+
+            if (!authenticationSuccess) {
+                try {
+                    int userFailedAttemptsCount = Integer.parseInt(user.getClaims().stream()
+                            .filter(claim -> claim.getClaimUri().equalsIgnoreCase(AccountConstants.FAILED_LOGIN_ATTEMPTS_CLAIM))
+                            .findFirst().get().getValue());
+                    userFailedAttemptsCount++;
+                    if (userFailedAttemptsCount >= maximumFailedAttempts) {
+                        LifecycleState lifecycleState = lifecycleOperationManager.executeLifecycleEvent(
+                                "LOCKED_INVALID_CREDENTIAL#VERFIED", lifecycleId, user.getUniqueUserId(), null);
+                        //TODO update user lifecycleState. state can be veirifed and unverifeied. Need to check user
+                        // current state
+                    }
+                } catch (IdentityStoreException e) {
+                    e.printStackTrace();
+                } catch (UserNotFoundException e) {
+                    e.printStackTrace();
+                } catch (LifecycleException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+
 
 //        Map<String, Object> eventProperties = event.getEventProperties();
 //        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
@@ -143,6 +204,11 @@ public class AccountLockHandler extends AbstractEventHandler {
 //            handlePostSetUserClaimValues(event, userName, userStoreManager, userStoreDomainName, tenantDomain,
 //                    identityProperties, maximumFailedAttempts, accountLockTime, unlockTimeRatio);
 //        }
+    }
+
+    @Override
+    public void rollBack(MessageContext messageContext) {
+
     }
 
 //    protected boolean handlePreAuthentication(Event event, String userName, UserStoreManager userStoreManager,

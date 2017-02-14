@@ -45,14 +45,26 @@ public class User implements Serializable {
     private String domainName;
 
     /**
+     * Lifecycle id
+     */
+    private String lifecycleId;
+
+    /**
+     * user current lifecycle state
+     */
+    private String state;
+
+    /**
      * The IdentityStore this user originates from.
      */
     private transient IdentityStore identityStore;
 
-    private User(String uniqueUserId, String domainName) {
+    private User(String uniqueUserId, String domainName, String lifecycleId, String state) {
 
         this.uniqueUserId = uniqueUserId;
         this.domainName = domainName;
+        this.lifecycleId = lifecycleId;
+        this.state = state;
     }
 
     /**
@@ -71,6 +83,14 @@ public class User implements Serializable {
      */
     public String getDomainName() {
         return this.domainName;
+    }
+
+    public String getLifecycleId() {
+        return lifecycleId;
+    }
+
+    public String getState() {
+        return state;
     }
 
     /**
@@ -221,6 +241,10 @@ public class User implements Serializable {
 
         private String domainName;
 
+        private String lifecycleId;
+
+        private String state;
+
         private IdentityStore identityStore;
 
 //        private AuthorizationStore authorizationStore;
@@ -239,6 +263,16 @@ public class User implements Serializable {
 
         public UserBuilder setUserId(String userName) {
             this.userId = userName;
+            return this;
+        }
+
+        public UserBuilder setLifecycleId(String lifecycleId) {
+            this.lifecycleId = lifecycleId;
+            return this;
+        }
+
+        public UserBuilder setState(String state) {
+            this.state = state;
             return this;
         }
 
@@ -264,7 +298,7 @@ public class User implements Serializable {
                 throw new StoreException("Required data missing for building user.");
             }
 
-            User user = new User(userId, domainName);
+            User user = new User(userId, domainName, lifecycleId, state);
             user.setIdentityStore(identityStore);
             return user;
         }

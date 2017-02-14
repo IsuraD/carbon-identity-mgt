@@ -27,7 +27,7 @@
     <groupId>org.wso2.carbon.identity.mgt</groupId>
     <artifactId>org.wso2.carbon.identity.mgt.parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.11-SNAPSHOT</version>
+    <version>0.1.10-SNAPSHOT</version>
     <name>WSO2 Carbon Identity Management - Parent</name>
 
     <scm>
@@ -177,11 +177,6 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.mgt</groupId>
                 <artifactId>in-memory-connectors-test-artifact</artifactId>
-                <version>${carbon.identity.mgt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.identity.mgt</groupId>
-                <artifactId>identity-store-interceptor-test-artifact</artifactId>
                 <version>${carbon.identity.mgt.version}</version>
             </dependency>
             <dependency>
@@ -353,6 +348,16 @@
                 <artifactId>msf4j-all</artifactId>
                 <version>${msf4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.lcm</groupId>
+                <artifactId>org.wso2.carbon.lcm.core</artifactId>
+                <version>${org.wso2.carbon.lcm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.lcm</groupId>
+                <artifactId>org.wso2.carbon.lcm.sql</artifactId>
+                <version>${org.wso2.carbon.lcm.version}</version>
+            </dependency>
 
             <!-- Features -->
             <dependency>
@@ -397,6 +402,18 @@
                 <version>${carbon.datasources.version}</version>
                 <type>zip</type>
             </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.wso2.carbon.lcm</groupId>-->
+                <!--<artifactId>org.wso2.carbon.lcm.core.feature</artifactId>-->
+                <!--<version>${org.wso2.carbon.lcm.version}</version>-->
+                <!--<type>zip</type>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.wso2.carbon.lcm</groupId>-->
+                <!--<artifactId>org.wso2.carbon.lcm.sql.feature</artifactId>-->
+                <!--<version>${org.wso2.carbon.lcm.version}</version>-->
+                <!--<type>zip</type>-->
+            <!--</dependency>-->
         </dependencies>
     </dependencyManagement>
 
@@ -405,6 +422,7 @@
         <module>components/org.wso2.carbon.identity.claim</module>
         <module>components/org.wso2.carbon.identity.mgt.login.interceptor</module>
         <module>components/org.wso2.carbon.identity.recovery</module>
+        <!--<module>components/org.wso2.carbon.identity.handler.event.account.lock</module>-->
         <module>feature/org.wso2.carbon.identity.mgt.feature</module>
         <module>feature/org.wso2.carbon.identity.claim.feature</module>
         <module>feature/org.wso2.carbon.identity.mgt.login.feature</module>
@@ -413,7 +431,8 @@
     </modules>
 
     <properties>
-        <carbon.identity.mgt.version>0.1.11-SNAPSHOT</carbon.identity.mgt.version>
+        <carbon.identity.mgt.version>0.1.10-SNAPSHOT</carbon.identity.mgt.version>
+        <org.wso2.carbon.lcm.version>1.0.0-SNAPSHOT</org.wso2.carbon.lcm.version>
 
         <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
         <osgi.service.component.imp.pkg.version.range>[1.2.0, 2.0.0)</osgi.service.component.imp.pkg.version.range>

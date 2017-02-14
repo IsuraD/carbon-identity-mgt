@@ -195,6 +195,60 @@ public class Domain {
         }
     }
 
+    /**
+     * Get user from domain user id
+     * @param domainUserId domainUserId
+     * @return domainUser
+     * @throws DomainException DomainException
+     * @throws UserNotFoundException UserNotFoundException
+     */
+    public DomainUser getUser(String domainUserId) throws DomainException, UserNotFoundException {
+        try {
+            return this.uniqueIdResolver.getUser(domainUserId, this.id);
+        } catch (UniqueIdResolverException e) {
+            throw new DomainException("Failed to retrieve user.", e);
+        }
+    }
+
+    /**
+     * Get domain user from a unique claim
+     * @param claim : unique claim
+     * @return
+     * @throws DomainException
+     * @throws UserNotFoundException
+     */
+    public DomainUser getDomainUser(Claim claim) throws DomainException, UserNotFoundException {
+        MetaClaimMapping metaClaimMapping = claimUriToMetaClaimMappings.get(claim.getClaimUri());
+
+        if (!metaClaimMapping.isUnique()) {
+            throw new DomainClientException("Provided claim is not unique.");
+        }
+
+        IdentityStoreConnector identityStoreConnector = identityStoreConnectorsMap
+                .get(metaClaimMapping.getIdentityStoreConnectorId());
+
+        String connectorUserId;
+        try {
+            connectorUserId = identityStoreConnector.getConnectorUserId(metaClaimMapping.getAttributeName(),
+                    claim.getValue());
+        } catch (IdentityStoreConnectorException e) {
+            throw new DomainException("Failed to get connector user", e);
+        }
+
+        if (isNullOrEmpty(connectorUserId)) {
+            throw new UserNotFoundException("Invalid claim value.");
+        }
+
+        DomainUser domainUser;
+        try {
+            domainUser = uniqueIdResolver.getUserFromConnectorUserId(connectorUserId, metaClaimMapping
+                    .getIdentityStoreConnectorId(), this.id);
+            return domainUser;
+        } catch (UniqueIdResolverException e) {
+            throw new DomainException("Failed to retrieve the domain user.", e);
+        }
+    }
+
     public String getDomainUserId(Claim claim) throws DomainException, UserNotFoundException {
 
         MetaClaimMapping metaClaimMapping = claimUriToMetaClaimMappings.get(claim.getClaimUri());
@@ -233,7 +287,7 @@ public class Domain {
         return domainUser.getDomainUserId();
     }
 
-    public List<String> listDomainUsers(int offset, int length) throws DomainException {
+    public List<DomainUser> listDomainUsers(int offset, int length) throws DomainException {
 
         List<DomainUser> domainUsers;
         try {
@@ -246,14 +300,10 @@ public class Domain {
             return Collections.emptyList();
         }
 
-        return domainUsers.stream()
-                .filter(Objects::nonNull)
-                .filter(uniqueUser -> !isNullOrEmpty(uniqueUser.getDomainUserId()))
-                .map(DomainUser::getDomainUserId)
-                .collect(Collectors.toList());
+        return domainUsers;
     }
 
-    public List<String> listDomainUsers(Claim claim, int offset, int length) throws DomainException {
+    public List<DomainUser> listDomainUsers(Claim claim, int offset, int length) throws DomainException {
 
         MetaClaimMapping metaClaimMapping = claimUriToMetaClaimMappings.get(claim.getClaimUri());
 
@@ -284,14 +334,10 @@ public class Domain {
             throw new DomainException("Failed to retrieve the unique user ids.");
         }
 
-        return domainUsers.stream()
-                .filter(Objects::nonNull)
-                .filter(domainUser -> !isNullOrEmpty(domainUser.getDomainUserId()))
-                .map(DomainUser::getDomainUserId)
-                .collect(Collectors.toList());
+        return domainUsers;
     }
 
-    public List<String> listDomainUsers(MetaClaim metaClaim, String filterPattern, int offset, int length)
+    public List<DomainUser> listDomainUsers(MetaClaim metaClaim, String filterPattern, int offset, int length)
             throws DomainException {
 
         MetaClaimMapping metaClaimMapping = claimUriToMetaClaimMappings.get(metaClaim.getClaimUri());
@@ -323,11 +369,7 @@ public class Domain {
             throw new DomainException("Failed to retrieve the unique user ids.");
         }
 
-        return domainUsers.stream()
-                .filter(Objects::nonNull)
-                .filter(uniqueUser -> !isNullOrEmpty(uniqueUser.getDomainUserId()))
-                .map(DomainUser::getDomainUserId)
-                .collect(Collectors.toList());
+        return domainUsers;
     }
 
     /**
@@ -769,8 +811,8 @@ public class Domain {
 
         String userUniqueId = IdentityUserMgtUtil.generateUUID();
         try {
-            String receivedUserUniqueId = uniqueIdResolver.addUser(new DomainUser(userUniqueId, userPartitions),
-                    this.id);
+            String receivedUserUniqueId = uniqueIdResolver.addUser(new DomainUser(userUniqueId, userPartitions,
+                            userBean.getState()), this.id);
 
             if (isNullOrEmpty(receivedUserUniqueId)) {
                 return receivedUserUniqueId;
@@ -863,7 +905,7 @@ public class Domain {
         }
 
         List<DomainUser> domainUsers = userPartitionsMapOfUsers.entrySet().stream()
-                .map(entry -> new DomainUser(entry.getKey(), entry.getValue()))
+                .map(entry -> new DomainUser(entry.getKey(), entry.getValue(), "CREATED"))
                 .collect(Collectors.toList());
 
         try {
